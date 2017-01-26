@@ -5,6 +5,11 @@ const githubApi = require('github')
 const github = new githubApi()
 const owner = 'hutchiep190'
 
+github.authenticate({
+  type: 'token',
+  token: process.env.GITHUB_TOKEN
+})
+
 function getPullRequest(repo, number, callback) {
   github.pullRequests.get({
     owner: owner,
@@ -89,16 +94,7 @@ function setupRepository(repo, headBranch, baseBranch) {
   })
 }
 
-module.exports = Github
-
-function Github() {
-  github.authenticate({
-    type: 'token',
-    token: process.env.GITHUB_TOKEN
-  })
-}
-
-Github.prototype.handleAction = function(repo, number, action) {
+function handleAction(repo, number, action) {
   if (action != 'opened') {
     console.log(`Not handling action ${action}`)
     return
@@ -114,3 +110,5 @@ Github.prototype.handleAction = function(repo, number, action) {
     setupRepository(repo, headBranch, baseBranch)
   })
 }
+
+module.exports.handleAction = handleAction

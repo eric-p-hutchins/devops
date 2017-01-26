@@ -10,8 +10,7 @@ app.post('/github', (request, response) => {
   const repo = request.body.repository.name
   const number = request.body.number
   const action = request.body.action
-  var github = new Github()
-  github.handleAction(repo, number, action)
+  Github.handleAction(repo, number, action)
   response.end(`Handled action ${action} from PR #${number} in repo ${repo}`)
 })
 
