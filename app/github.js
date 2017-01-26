@@ -8,7 +8,7 @@ const owner = 'hutchiep190'
 
 github.authenticate({
   type: 'token',
-  token: token
+  token: process.env.GITHUB_TOKEN
 })
 
 function getPullRequest(repo, number, callback) {
