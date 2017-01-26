@@ -1,6 +1,8 @@
 const fs = require('fs')
+const fx = require('mkdir-recursive')
+const exec = require('child_process').exec
 const githubApi = require('github')
-const token = 'ef517ce3872f7a50deefcf9866abe18dc5256b83'
+const token = 'd9052020bcb20083c008090247a350d916798629'
 const github = new githubApi()
 
 github.authenticate({
@@ -22,21 +24,73 @@ function dirFor(repo, branch) {
   return `github.com/hutchiep190/${repo}/${branch}`
 }
 
-function checkoutRepository(dir) {
-  console.log(`Checking out ${dir}`)
+function cloneRepository(repo, branch, dir, callback) {
+  console.log(`cloning ${dir}`)
+  fx.mkdir(dir, (err) => {
+    exec(`git clone git@github.com:hutchiep190/${repo} ${dir}`, function(error, stdout, stderr) {
+      if (error) {
+        return console.log('Error cloning github repo', error)
+      }
+      if (typeof callback === 'function') {
+        callback()
+      }
+    })
+  })
+}
+
+function checkoutBranch(branch, dir, callback) {
+  console.log(`checking out ${branch} in ${dir}`)
+  exec(`cd ${dir}; git fetch`, function(error, stdout, stderr) {
+    if (error) {
+      return console.log('Error fetching from github', error)
+    }
+    exec(`cd ${dir}; git reset --hard origin/${branch}`, function(error, stdout, stderr) {
+      if (error) {
+        return console.log('Error resetting repo', error)
+      }
+      exec(`cd ${dir}; git checkout -f ${branch}; git branch`, function(error, stdout, stderr) {
+        if (error) {
+          return console.log('Error checking out branch', error)
+        }
+        if (typeof callback === 'function') {
+          callback()
+        }
+      })
+    })
+  })
+}
+
+function ensureCheckedOut(repo, branch, dir, callback) {
+  fs.access(dir, (err) => {
+    if (err) {
+      if (err.code === "ENOENT") {
+        cloneRepository(repo, branch, dir, () => {
+          checkoutBranch(branch, dir, callback)
+        })
+      } else {
+        throw err
+      }
+    } else {
+      checkoutBranch(branch, dir, callback)
+    }
+  })
+}
+
+function mergeBranchInDirectory(dir, branch) {
+  exec(`cd ${dir}; git merge origin/${branch} --no-ff -m 'avoid prompt'`, function(error, stdout, stderr) {
+    if (error) {
+      return console.log('Error merging branch', error)
+    }
+  })
 }
 
 function setupRepository(repo, headBranch, baseBranch) {
   const headDir = dirFor(repo, headBranch)
   const baseDir = dirFor(repo, baseBranch)
-  fs.access(baseDir, (err) => {
-    if (err) {
-      if (err.code === "ENOENT") {
-        checkoutRepository(baseDir)
-      } else {
-        throw err
-      }
-    }
+  ensureCheckedOut(repo, baseBranch, baseDir, () => {
+    ensureCheckedOut(repo, headBranch, headDir, () => {
+      mergeBranchInDirectory(headDir, baseBranch)
+    })
   })
 }
 
