@@ -2,14 +2,8 @@ const fs = require('fs')
 const fx = require('mkdir-recursive')
 const exec = require('child_process').exec
 const githubApi = require('github')
-const token = 'd9052020bcb20083c008090247a350d916798629'
 const github = new githubApi()
 const owner = 'hutchiep190'
-
-github.authenticate({
-  type: 'token',
-  token: process.env.GITHUB_TOKEN
-})
 
 function getPullRequest(repo, number, callback) {
   github.pullRequests.get({
@@ -95,7 +89,16 @@ function setupRepository(repo, headBranch, baseBranch) {
   })
 }
 
-function handleAction(repo, number, action) {
+module.exports = Github
+
+function Github() {
+  github.authenticate({
+    type: 'token',
+    token: process.env.GITHUB_TOKEN
+  })
+}
+
+Github.prototype.handleAction = function(repo, number, action) {
   if (action != 'opened') {
     console.log(`Not handling action ${action}`)
     return
@@ -111,5 +114,3 @@ function handleAction(repo, number, action) {
     setupRepository(repo, headBranch, baseBranch)
   })
 }
-
-module.exports.handleAction = handleAction
