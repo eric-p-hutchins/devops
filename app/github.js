@@ -4,6 +4,7 @@ const exec = require('child_process').exec
 const githubApi = require('github')
 const token = 'd9052020bcb20083c008090247a350d916798629'
 const github = new githubApi()
+const owner = 'hutchiep190'
 
 github.authenticate({
   type: 'token',
@@ -12,7 +13,7 @@ github.authenticate({
 
 function getPullRequest(repo, number, callback) {
   github.pullRequests.get({
-    owner: 'hutchiep190',
+    owner: owner,
     repo: repo,
     number: number
   }, function (err, res) {
@@ -21,13 +22,13 @@ function getPullRequest(repo, number, callback) {
 }
 
 function dirFor(repo, branch) {
-  return `github.com/hutchiep190/${repo}/${branch}`
+  return `github.com/${owner}/${repo}/${branch}`
 }
 
 function cloneRepository(repo, branch, dir, callback) {
   console.log(`cloning ${dir}`)
   fx.mkdir(dir, (err) => {
-    exec(`git clone git@github.com:hutchiep190/${repo} ${dir}`, function(error, stdout, stderr) {
+    exec(`git clone git@github.com:${owner}/${repo} ${dir}`, function(error, stdout, stderr) {
       if (error) {
         return console.log('Error cloning github repo', error)
       }
