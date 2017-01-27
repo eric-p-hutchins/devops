@@ -4,6 +4,11 @@ const exec = require('child_process').exec
 const githubApi = require('github')
 const github = new githubApi()
 const owner = 'hutchiep190'
+const awsImageId = 'ami-0b33d91d'
+const awsSecurityGroupIds = 'sg-a86ad7d4'
+const awsKeyName = 'eph-key-pair'
+const awsRegion = 'us-east-1'
+const awsInstanceType = 't2.micro'
 
 github.authenticate({
   type: 'token',
@@ -76,21 +81,37 @@ function ensureCheckedOut(repo, branch, dir, callback) {
   })
 }
 
-function mergeBranchInDirectory(dir, branch) {
+function mergeBranchInDirectory(dir, branch, callback) {
   exec(`cd ${dir}; git merge origin/${branch} --no-ff -m 'avoid prompt'`, function(error, stdout, stderr) {
     if (error) {
       return console.log('Error merging branch', error)
     }
+    if (typeof callback === 'function') {
+      callback()
+    }
   })
 }
 
-function setupRepository(repo, headBranch, baseBranch) {
+function setupRepository(repo, headBranch, baseBranch, callback) {
   const headDir = dirFor(repo, headBranch)
   const baseDir = dirFor(repo, baseBranch)
   ensureCheckedOut(repo, baseBranch, baseDir, () => {
     ensureCheckedOut(repo, headBranch, headDir, () => {
-      mergeBranchInDirectory(headDir, baseBranch)
+      mergeBranchInDirectory(headDir, baseBranch, callback)
     })
+  })
+}
+
+function startInstance() {
+  // Generate a random number in the range 0 - 9999
+  const number = Math.floor(Math.random() * 10000)
+
+  exec(`aws ec2 run-instances --image-id ${awsImageId} --security-group-ids ${awsSecurityGroupIds} --count 1 --instance-type ${awsInstanceType} --region ${awsRegion} --key-name ${awsKeyName} --user-data ${number}`, function(error, stdout, stderr) {
+    if (error) {
+      return console.log('Error starting instance', error)
+    } else {
+      console.log(stdout)
+    }
   })
 }
 
@@ -107,7 +128,9 @@ function handleAction(repo, number, action) {
     const baseBranch = pullRequest.base.ref
     const headBranch = pullRequest.head.ref
     console.log(`Handling pull request from branch ${headBranch} to branch ${baseBranch}`)
-    setupRepository(repo, headBranch, baseBranch)
+    setupRepository(repo, headBranch, baseBranch, () => {
+      startInstance()
+    })
   })
 }
 
