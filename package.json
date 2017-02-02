@@ -18,6 +18,7 @@
   },
   "homepage": "https://github.com/hutchiep190/devops#readme",
   "dependencies": {
+    "aws-sdk": "^2.9.0",
     "body-parser": "^1.16.0",
     "express": "^4.14.0",
     "github": "^8.1.1",
